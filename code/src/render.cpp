@@ -33,29 +33,11 @@ extern bool loadOBJ(const char * path,
 );
 
 namespace globalVariables {
-	int exCounter = 1;
-	int cameraCounter = 0;
-	bool models = true;
-	bool pressed = false;
-	int bulbState = 0;
-	int toonShading = 3;
-	int contourShading = 0;
-	glm::vec4 modelColor;
 	float lastTime=0;
 	float dt=0;
-	bool trumpNoria1 = true;
 }
 namespace GV = globalVariables;
 
-namespace ContourVariables {
-	int countour = 1;
-}
-namespace CV = ContourVariables;
-
-namespace shaders {
-	int nCabinas=20;
-	float rCabinas=30.f;
-}
 
 
 std::vector< glm::vec3 > vertices;
@@ -73,7 +55,7 @@ namespace hourglass {
 namespace squirtle {
 	GLuint modelVao;
 	GLuint modelVbo[3];
-	glm::vec4 color = { 0, 1, 0, 0 };
+	glm::vec4 color = { 0, 1, 0.9, 0 };
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -97,114 +79,7 @@ void GUI() {
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);//FrameRate
 
-		ImGui::Text("Current Exercise: %d", GV::exCounter);
-
-		ImGui::InputFloat3("temp", aux);
-
-		switch (GV::exCounter) {
-		case 1: //solo pinta noria de cubos
-			break;
-		case 2: //noria de modelos
-			break;
-		case 3: //noria de modelos + movimientos de cámara
-			switch (GV::cameraCounter) {
-			case 0:
-				ImGui::Text("Current Camera: General Shot");
-				break;
-			case 1:
-				ImGui::Text("Current Camera: Shot Counter Shot");
-				break;
-			case 2:
-				ImGui::Text("Current Camera: Lateral View");
-				break;
-			case 3:
-				ImGui::Text("Current Camera: Rotating God's Eye Shot");
-				break;
-			}
-			break;
-		case 4: //noria de modelos + fuentes de luz
-			if (light_moves)
-				ImGui::Text("D key to Day-Night Transition is: On");
-			else {
-				ImGui::Text("D key to Day-Night Transition is: Off");
-
-				if (GV::bulbState == 0)
-					ImGui::Text("B key to Bulb Light: On (Static)");
-				else if (GV::bulbState == 1)
-					ImGui::Text("B key to Bulb Light: Off");
-				else if (GV::bulbState == 2)
-					ImGui::Text("B key to Bulb Light: On (Pendulum)");
-			}
-			break;
-		case 5: //global scene composition
-			switch (GV::cameraCounter) {
-			case 0:
-				ImGui::Text("Current Camera: General Shot");
-				break;
-			case 1:
-				ImGui::Text("Current Camera: Shot Counter Shot");
-				break;
-			case 2:
-				ImGui::Text("Current Camera: Lateral View");
-				break;
-			case 3:
-				ImGui::Text("Current Camera: Rotating God's Eye Shot");
-				break;
-			}
-			break;
-		case 6: //toon shading exercises
-			if (light_moves)
-				ImGui::Text("D key to Day-Night Transition is: On");
-			else {
-				ImGui::Text("D key to Day-Night Transition is: Off");
-
-				if (GV::bulbState == 0)
-					ImGui::Text("B key to Bulb Light: On (Static)");
-				else if (GV::bulbState == 1)
-					ImGui::Text("B key to Bulb Light: Off");
-				else if (GV::bulbState == 2)
-					ImGui::Text("B key to Bulb Light: On (Pendulum)");
-			}
-			if (GV::toonShading == 0) {
-				ImGui::Text("T key to Toon Shading: Exercise 9 (Only Sun)");
-			}
-			else if (GV::toonShading == 1) {
-				ImGui::Text("T key to Toon Shading: Exercise 10 (Sun and Moon)");
-			}
-			else if (GV::toonShading == 2) {
-				ImGui::Text("T key to Toon Shading: Exercise 11 (Night Illumination and Bulb Light)");
-			}
-			else if (GV::toonShading == 3) {
-				ImGui::Text("T key to Toon Shading: Exercise 9 , 10 and 11 (Toon Shading Off)");
-			}
-			break;
-		case 7: //contour shading
-			if (GV::contourShading == 0) {
-				ImGui::Text("T key to Contour Shading: Exercise 12 (Trump Contour)");
-			}
-			else if (GV::contourShading == 1) {
-				ImGui::Text("T key to Contour Shading: Exercise 13 (Trump Highlight Contour)");
-			}
-			else if (GV::contourShading == 2) {
-				ImGui::Text("T key to Contour Shading: Exercise 14 (Thick characters Contour)");
-			}
-			else
-				std::cout << "algo va mal" << std::endl;
-			switch (GV::cameraCounter) {
-			case 0:
-				ImGui::Text("Current Camera: General Shot");
-				break;
-			case 1:
-				ImGui::Text("Current Camera: Shot Counter Shot");
-				break;
-			case 2:
-				ImGui::Text("Current Camera: Lateral View");
-				break;
-			case 3:
-				ImGui::Text("Current Camera: Rotating God's Eye Shot");
-				break;
-			}
-		}
+		
 	}
 	// .........................
 
@@ -1112,8 +987,6 @@ namespace MyLoadedModel {
 
 	const char* model_fragShader =
 		"#version 330\n\
-		uniform int toonShading; \n\
-		uniform int contourShading; \n\
 		uniform int exCounter; \n\
 		uniform int model; \n\
 		in vec4 vert_Normal;\n\
@@ -1223,9 +1096,6 @@ namespace MyLoadedModel {
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), sun::pos.x, sun::pos.y, sun::pos.z);
 		glUniform4f(glGetUniformLocation(modelProgram, "color"), sun::color.x, sun::color.y, sun::color.z, sun::color.a);
-		glUniform1i(glGetUniformLocation(modelProgram, "toonShading"), GV::toonShading);
-		glUniform1i(glGetUniformLocation(modelProgram, "contourShading"), GV::contourShading);
-		glUniform1i(glGetUniformLocation(modelProgram, "exCounter"), GV::exCounter);
 		glUniform1i(glGetUniformLocation(modelProgram, "model"), model);
 	
 		glDrawArrays(GL_TRIANGLES, 0, 25000);
