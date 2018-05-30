@@ -256,9 +256,16 @@ void GLrender(double currentTime) {
 	
 	RV::_MVP = RV::_projection * RV::_modelView;
 
+	float divider = 2;
+	float sine = sin(currentTime)/divider;
+	float sain = sine + 1 / divider;
+
 	for (int i = 0; i < 100; ++i) {
-		hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50, i*1.5 - 50 ,-35 });
-		squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5, i*1.5 - 50, -35 });
+		hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50+1.5*(i%2==0), i*1.5 - 50 ,-50 + sine });
+		squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5 - 1.5*(i % 2 == 0), i*1.5 - 50, -50 - sine });
+
+		hourglass::objMat = glm::rotate(hourglass::objMat, glm::radians(glm::lerp(0.f, 180.f, sain)), glm::vec3(1, 0, 0));
+		squirtle::objMat = glm::rotate(squirtle::objMat, glm::radians(glm::lerp(0.f, -180.f, sain)), glm::vec3(1, 0, 0));
 		for (int j = 0; j < 100; ++j) {
 			if (j % 2 == 0) {
 				MyLoadedModel::drawModel(0);
@@ -1108,8 +1115,15 @@ namespace MyLoadedModel {
 		glUniform4f(glGetUniformLocation(modelProgram, "color"), sun::color.x, sun::color.y, sun::color.z, sun::color.a);
 		glUniform1i(glGetUniformLocation(modelProgram, "model"), model);
 	
-		glDrawArrays(GL_TRIANGLES, 0, 25000);
-
+		//glDrawArrays(GL_TRIANGLES, 0, 25000);
+		switch (model) {
+		case 0:
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 3000, 1);
+			break;
+		case 1:
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 5000, 1);
+			break;
+		}
 
 		glUseProgram(0);
 		glBindVertexArray(0);
