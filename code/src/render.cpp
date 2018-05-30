@@ -110,8 +110,8 @@ void drawAxis();
 namespace MyLoadedModel {
 	void setupModel(int model);
 	void cleanupModel(int model);
-	void updateModel(const glm::mat4& transform, int model, int cabina=0);
-	void drawModel(int model, int cabina=0);
+	void updateModel(const glm::mat4& transform, int model);
+	void drawModel(int model);
 }
 
 namespace Sphere {
@@ -253,14 +253,24 @@ void GLrender(double currentTime) {
 	RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
 	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[1], glm::vec3(1.f, 0.f, 0.f));
 	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[0], glm::vec3(0.f, 1.f, 0.f));
-
+	
 	RV::_MVP = RV::_projection * RV::_modelView;
 
-	MyLoadedModel::drawModel(0);
+	for (int i = 0; i < 100; ++i) {
+		hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50, i*1.5 - 50 ,-35 });
+		squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5, i*1.5 - 50, -35 });
+		for (int j = 0; j < 100; ++j) {
+			if (j % 2 == 0) {
+				MyLoadedModel::drawModel(0);
+				hourglass::objMat = glm::translate(hourglass::objMat, glm::vec3{ 3, 0, 0 });
+			}
+			else {
+				MyLoadedModel::drawModel(1);
+				squirtle::objMat = glm::translate(squirtle::objMat, glm::vec3{ 3, 0, 0 });
+			}
+		}
+	}
 
-	glm::mat4 transMat = glm::translate(glm::mat4(1), glm::vec3(1, 0, 0));
-	MyLoadedModel::updateModel(transMat, 1);
-	MyLoadedModel::drawModel(1);
 
 	ImGui::Render();
 }
@@ -1067,7 +1077,7 @@ namespace MyLoadedModel {
 		glDeleteShader(modelShaders[0]);
 		glDeleteShader(modelShaders[1]);
 	}
-	void updateModel(const glm::mat4& transform, int model, int cabina) {
+	void updateModel(const glm::mat4& transform, int model) {
 		switch (model) {
 		case 0:
 			hourglass::objMat = transform;
@@ -1077,7 +1087,7 @@ namespace MyLoadedModel {
 			break;
 		}
 	}
-	void drawModel(int model, int cabina) {
+	void drawModel(int model) {
 		switch (model) {
 		case 0:
 			glBindVertexArray(hourglass::modelVao);
