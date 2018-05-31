@@ -18,7 +18,6 @@
 
 #define PI  3.141592658
 #define nExercises 17
-
 namespace sun {
 	glm::vec3 pos(0);
 	glm::vec4 color(1);
@@ -33,8 +32,11 @@ extern bool loadOBJ(const char * path,
 );
 
 namespace globalVariables {
+	bool pressed = false;
+	int modo = 0;
 	float lastTime=0;
 	float dt=0;
+	glm::mat4 multiDrawList[10000];
 }
 namespace GV = globalVariables;
 
@@ -79,7 +81,17 @@ void GUI() {
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);//FrameRate
 
-		
+		switch (GV::modo) {
+		case 0:
+			ImGui::Text("Mode: usual GL functions in a loop");
+			break;
+		case 1:
+			ImGui::Text("Mode: instancing");
+			break;
+		case 2:
+			ImGui::Text("Mode: MultiDrawIndirect");
+			break;
+		}
 	}
 	// .........................
 
@@ -226,9 +238,6 @@ void GLinit(int width, int height) {
 	normals.shrink_to_fit();
 	uvs.clear();
 	uvs.shrink_to_fit();
-
-	
-
 }
 
 void GLcleanup() {
@@ -245,6 +254,30 @@ void GLcleanup() {
 static double timeGiratorio = 0;
 void GLrender(double currentTime) {
 
+	//KEYBOARD INPUT
+	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
+	if (keyboardState[SDL_SCANCODE_1]) { //next exercise
+		if (!GV::pressed) {
+			GV::pressed = true;
+			GV::modo = 0;
+		}
+	}
+	else if (keyboardState[SDL_SCANCODE_2]) { //next exercise
+		if (!GV::pressed) {
+			GV::pressed = true;
+			GV::modo = 1;
+		}
+	}
+	else if (keyboardState[SDL_SCANCODE_3]) { //next exercise
+		if (!GV::pressed) {
+			GV::pressed = true;
+			GV::modo = 2;
+		}
+	}
+	else {
+		GV::pressed = false;
+	}
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	//Cube::drawCube(currentTime);
@@ -260,26 +293,61 @@ void GLrender(double currentTime) {
 	float sine = sin(currentTime)/divider;
 	float sain = sine + 1 / divider;
 
-	for (int i = 0; i < 100; ++i) {
-		hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50+1.5*(i%2==0), i*1.5 - 50 ,-50 + sine });
-		squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5 - 1.5*(i % 2 == 0), i*1.5 - 50, -50 - sine });
+	if (GV::modo == 0) {
+		for (int i = 0; i < 100; ++i) {
+			hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50 + 1.5*(i % 2 == 0), i*1.5 - 50 ,-50 + sine });
+			squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5 - 1.5*(i % 2 == 0), i*1.5 - 50, -50 - sine });
 
-		hourglass::objMat = glm::rotate(hourglass::objMat, glm::radians(glm::lerp(0.f, 180.f, sain)), glm::vec3(1, 0, 0));
-		squirtle::objMat = glm::rotate(squirtle::objMat, glm::radians(glm::lerp(0.f, -180.f, sain)), glm::vec3(1, 0, 0));
-		for (int j = 0; j < 100; ++j) {
-			if (j % 2 == 0) {
-				MyLoadedModel::drawModel(0);
-				hourglass::objMat = glm::translate(hourglass::objMat, glm::vec3{ 3, 0, 0 });
-			}
-			else {
-				MyLoadedModel::drawModel(1);
-				squirtle::objMat = glm::translate(squirtle::objMat, glm::vec3{ 3, 0, 0 });
+			hourglass::objMat = glm::rotate(hourglass::objMat, glm::radians(glm::lerp(0.f, 180.f, sain)), glm::vec3(1, 0, 0));
+			squirtle::objMat = glm::rotate(squirtle::objMat, glm::radians(glm::lerp(0.f, -180.f, sain)), glm::vec3(1, 0, 0));
+			for (int j = 0; j < 100; ++j) {
+				if (j % 2 == 0) {
+					MyLoadedModel::drawModel(0);
+					hourglass::objMat = glm::translate(hourglass::objMat, glm::vec3{ 3, 0, 0 });
+				}
+				else {
+					MyLoadedModel::drawModel(1);
+					squirtle::objMat = glm::translate(squirtle::objMat, glm::vec3{ 3, 0, 0 });
+				}
 			}
 		}
+	}
+	else if (GV::modo == 1) {
+
+		hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50, -50, -50 });
+		squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5, -48.5, -50 });
+
+		hourglass::objMat = glm::rotate(hourglass::objMat, static_cast<float>(glm::radians(sin(currentTime)*45.f)), glm::vec3{ 0, 0, 1 });
+		squirtle::objMat = glm::rotate(squirtle::objMat, static_cast<float>(glm::radians(cos(currentTime)*-45.f)), glm::vec3{ 0, 0, 1 });
+		
+		MyLoadedModel::drawModel(0);
+		MyLoadedModel::drawModel(1);
+	}
+	else if (GV::modo == 2) {
+
+		for (int i = 0; i < 100; ++i) {
+			hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50 + 1.5*(i % 2 == 0), i*1.5 - 50 ,-50 + sine });
+			squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5 - 1.5*(i % 2 == 0), i*1.5 - 50, -50 - sine });
+
+			hourglass::objMat = glm::rotate(hourglass::objMat, glm::radians(glm::lerp(0.f, 180.f, sain)), glm::vec3(1, 0, 0));
+			squirtle::objMat = glm::rotate(squirtle::objMat, glm::radians(glm::lerp(0.f, -180.f, sain)), glm::vec3(1, 0, 0));
+			for (int j = 0; j < 100; ++j) {
+				if (j % 2 == 0) {
+					GV::multiDrawList[j + i * 100] = hourglass::objMat;
+				}
+				else {
+					GV::multiDrawList[j + i * 100] = squirtle::objMat;
+				}
+			}
+		}
+
+		MyLoadedModel::drawModel(0);
+		MyLoadedModel::drawModel(1);
 	}
 
 
 	ImGui::Render();
+
 }
 
 
@@ -995,8 +1063,12 @@ namespace MyLoadedModel {
 	uniform mat4 objMat;\n\
 	uniform mat4 mv_Mat;\n\
 	uniform mat4 mvpMat;\n\
+	int row;\n\
+	int column;\n\
 	void main() {\n\
-		gl_Position = mvpMat * objMat * vec4(in_Position, 1.0);\n\
+		row=gl_InstanceID%100;\n\
+		column = gl_InstanceID / 100;\n\
+		gl_Position = mvpMat * objMat * vec4(in_Position+vec3(1.5, 0, 0)*row+vec3(0, 3, 0)*column, 1.0);\n\
 		vert_Normal = mv_Mat * objMat * vec4(in_Normal, 0.0);\n\
 		lDir = normalize(lPos - (objMat * vec4(in_Position, 1.0)).xyz );\n\
 	}";
@@ -1114,17 +1186,25 @@ namespace MyLoadedModel {
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), sun::pos.x, sun::pos.y, sun::pos.z);
 		glUniform4f(glGetUniformLocation(modelProgram, "color"), sun::color.x, sun::color.y, sun::color.z, sun::color.a);
 		glUniform1i(glGetUniformLocation(modelProgram, "model"), model);
-	
-		//glDrawArrays(GL_TRIANGLES, 0, 25000);
-		switch (model) {
-		case 0:
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 3000, 1);
+		
+		switch(GV::modo) {
+		case 0: //usual GL functions in a loop
+			glDrawArrays(GL_TRIANGLES, 0, 25000);
 			break;
-		case 1:
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 5000, 1);
+		case 1: //instancing
+			switch (model) {
+			case 0:
+				glDrawArraysInstanced(GL_TRIANGLES, 0, 3000, 5000);
+				break;
+			case 1:
+				glDrawArraysInstanced(GL_TRIANGLES, 0, 5000, 5000);
+				break;
+			}
+			break;
+		case 2: //MultiDrawIndirect
+			glMultiDrawArraysIndirect(GL_TRIANGLES, GV::multiDrawList, 10000, sizeof(glm::mat4));
 			break;
 		}
-
 		glUseProgram(0);
 		glBindVertexArray(0);
 
