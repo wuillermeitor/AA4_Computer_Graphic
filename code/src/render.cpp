@@ -31,15 +31,21 @@ extern bool loadOBJ(const char * path,
 	std::vector < glm::vec3 > & out_normals
 );
 
+typedef  struct {
+	glm::uint  count;
+	glm::uint  instanceCount;
+	glm::uint  first;
+	glm::uint  baseInstance;
+} multiDrawStruct;
+
 namespace globalVariables {
 	bool pressed = false;
 	int modo = 0;
 	float lastTime=0;
 	float dt=0;
-	glm::mat4 multiDrawList[10000];
+	multiDrawStruct multiDrawList;
 }
 namespace GV = globalVariables;
-
 
 
 std::vector< glm::vec3 > vertices;
@@ -325,7 +331,7 @@ void GLrender(double currentTime) {
 	}
 	else if (GV::modo == 2) {
 
-		for (int i = 0; i < 100; ++i) {
+		/*for (int i = 0; i < 100; ++i) {
 			hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50 + 1.5*(i % 2 == 0), i*1.5 - 50 ,-50 + sine });
 			squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5 - 1.5*(i % 2 == 0), i*1.5 - 50, -50 - sine });
 
@@ -333,13 +339,29 @@ void GLrender(double currentTime) {
 			squirtle::objMat = glm::rotate(squirtle::objMat, glm::radians(glm::lerp(0.f, -180.f, sain)), glm::vec3(1, 0, 0));
 			for (int j = 0; j < 100; ++j) {
 				if (j % 2 == 0) {
-					GV::multiDrawList[j + i * 100] = hourglass::objMat;
+					GV::multiDrawList[j + i * 100].count=j+i*100;
+					GV::multiDrawList[j + i * 100].instanceCount = j + i * 100;
+					GV::multiDrawList[j + i * 100].baseInstance = 0;
+					GV::multiDrawList[j + i * 100].first = 0;
 				}
 				else {
-					GV::multiDrawList[j + i * 100] = squirtle::objMat;
+					GV::multiDrawList[j + i * 100].count = j + i * 100;
+					GV::multiDrawList[j + i * 100].instanceCount = j + i * 100;
+					GV::multiDrawList[j + i * 100].baseInstance = 0;
+					GV::multiDrawList[j + i * 100].first = 0;
 				}
 			}
-		}
+		}*/
+
+		hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50, -50, -50 });
+		squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5, -48.5, -50 });
+
+		GV::multiDrawList.first = 0;
+		GV::multiDrawList.count = 8000;
+		GV::multiDrawList.instanceCount = 10000;
+		GV::multiDrawList.baseInstance = 0; //esto lo podemos dejar como 0
+		
+		
 
 		MyLoadedModel::drawModel(0);
 		MyLoadedModel::drawModel(1);
@@ -1189,7 +1211,7 @@ namespace MyLoadedModel {
 		
 		switch(GV::modo) {
 		case 0: //usual GL functions in a loop
-			glDrawArrays(GL_TRIANGLES, 0, 25000);
+			glDrawArrays(GL_TRIANGLES, 0, 8000);
 			break;
 		case 1: //instancing
 			switch (model) {
@@ -1202,7 +1224,9 @@ namespace MyLoadedModel {
 			}
 			break;
 		case 2: //MultiDrawIndirect
-			glMultiDrawArraysIndirect(GL_TRIANGLES, GV::multiDrawList, 10000, sizeof(glm::mat4));
+			
+			glMultiDrawArraysIndirect(GL_TRIANGLES, &GV::multiDrawList, 1, 0);
+			std::cout << glewGetErrorString(glGetError()) << std::endl;
 			break;
 		}
 		glUseProgram(0);
