@@ -33,7 +33,7 @@ extern bool loadOBJ(const char * path,
 
 typedef  struct {
 	glm::uint  count;
-	glm::uint  instanceCount;
+	glm::uint  primCount;
 	glm::uint  first;
 	glm::uint  baseInstance;
 } multiDrawStruct;
@@ -356,10 +356,6 @@ void GLrender(double currentTime) {
 		hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50, -50, -50 });
 		squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5, -48.5, -50 });
 
-		GV::multiDrawList.first = 0;
-		GV::multiDrawList.count = 8000;
-		GV::multiDrawList.instanceCount = 10000;
-		GV::multiDrawList.baseInstance = 0; //esto lo podemos dejar como 0
 		
 		
 
@@ -1111,6 +1107,10 @@ namespace MyLoadedModel {
 			out_Color = vec4(modelcolor.xyz, 1.0)*vec4(color.xyz * U, 1.0); \n\
 		}";
 	void setupModel(int model) {
+		GV::multiDrawList.count = vertices.size();
+		GV::multiDrawList.primCount = 5000;
+		GV::multiDrawList.first = 0;
+		GV::multiDrawList.baseInstance = 0;
 		switch (model) {
 		case 0:
 			glGenVertexArrays(1, &hourglass::modelVao);
@@ -1161,6 +1161,12 @@ namespace MyLoadedModel {
 		glBindAttribLocation(modelProgram, 0, "in_Position");
 		glBindAttribLocation(modelProgram, 1, "in_Normal");
 		linkProgram(modelProgram);
+
+
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, squirtle::modelVbo[2]);
+		glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(GV::multiDrawList), &GV::multiDrawList, GL_STATIC_DRAW);
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, hourglass::modelVbo[2]);
+		glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(GV::multiDrawList), &GV::multiDrawList, GL_STATIC_DRAW);
 	}
 	void cleanupModel(int model) {
 		switch (model) {
@@ -1192,12 +1198,14 @@ namespace MyLoadedModel {
 		switch (model) {
 		case 0:
 			glBindVertexArray(hourglass::modelVao);
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, hourglass::modelVbo[2]);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(hourglass::objMat));
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), hourglass::color.x, hourglass::color.y, hourglass::color.z, hourglass::color.a);
 			break;
 		case 1:
 			glBindVertexArray(squirtle::modelVao);
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, squirtle::modelVbo[2]);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(squirtle::objMat));
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), squirtle::color.x, squirtle::color.y, squirtle::color.z, squirtle::color.a);
@@ -1224,8 +1232,9 @@ namespace MyLoadedModel {
 			}
 			break;
 		case 2: //MultiDrawIndirect
-			
-			glMultiDrawArraysIndirect(GL_TRIANGLES, &GV::multiDrawList, 1, 0);
+
+			glMultiDrawArraysIndirect(GL_TRIANGLES, 0, 1, 0);
+			//glMultiDrawArraysIndirect(GL_TRIANGLES, &GV::multiDrawList, 1, 0);
 			std::cout << glewGetErrorString(glGetError()) << std::endl;
 			break;
 		}
