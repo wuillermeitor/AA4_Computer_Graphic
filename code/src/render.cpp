@@ -331,32 +331,11 @@ void GLrender(double currentTime) {
 	}
 	else if (GV::modo == 2) {
 
-		/*for (int i = 0; i < 100; ++i) {
-			hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50 + 1.5*(i % 2 == 0), i*1.5 - 50 ,-50 + sine });
-			squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5 - 1.5*(i % 2 == 0), i*1.5 - 50, -50 - sine });
-
-			hourglass::objMat = glm::rotate(hourglass::objMat, glm::radians(glm::lerp(0.f, 180.f, sain)), glm::vec3(1, 0, 0));
-			squirtle::objMat = glm::rotate(squirtle::objMat, glm::radians(glm::lerp(0.f, -180.f, sain)), glm::vec3(1, 0, 0));
-			for (int j = 0; j < 100; ++j) {
-				if (j % 2 == 0) {
-					GV::multiDrawList[j + i * 100].count=j+i*100;
-					GV::multiDrawList[j + i * 100].instanceCount = j + i * 100;
-					GV::multiDrawList[j + i * 100].baseInstance = 0;
-					GV::multiDrawList[j + i * 100].first = 0;
-				}
-				else {
-					GV::multiDrawList[j + i * 100].count = j + i * 100;
-					GV::multiDrawList[j + i * 100].instanceCount = j + i * 100;
-					GV::multiDrawList[j + i * 100].baseInstance = 0;
-					GV::multiDrawList[j + i * 100].first = 0;
-				}
-			}
-		}*/
-
 		hourglass::objMat = glm::translate(glm::mat4(1), glm::vec3{ -50, -50, -50 });
 		squirtle::objMat = glm::translate(glm::mat4(1), glm::vec3{ -48.5, -48.5, -50 });
 
-		
+		hourglass::objMat = glm::translate(hourglass::objMat, glm::vec3{0, 0, -5*sin(currentTime) });
+		squirtle::objMat = glm::translate(squirtle::objMat, glm::vec3{ 0, 0, 5*sin(currentTime) });
 		
 
 		MyLoadedModel::drawModel(0);
@@ -1235,7 +1214,6 @@ namespace MyLoadedModel {
 
 			glMultiDrawArraysIndirect(GL_TRIANGLES, 0, 1, 0);
 			//glMultiDrawArraysIndirect(GL_TRIANGLES, &GV::multiDrawList, 1, 0);
-			std::cout << glewGetErrorString(glGetError()) << std::endl;
 			break;
 		}
 		glUseProgram(0);
